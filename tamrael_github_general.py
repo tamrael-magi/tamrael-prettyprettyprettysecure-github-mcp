@@ -58,6 +58,11 @@ import mcp.server.stdio
 import mcp.types as types
 import base64
 
+# Define SecurityError for production credential validation
+class SecurityError(Exception):
+    """Raised when security requirements are not met"""
+    pass
+
 # Import secure configuration
 try:
     from secure_config import get_secure_settings
@@ -216,7 +221,22 @@ if AUDIT_AVAILABLE:
         audit_logger = None
 
 def get_github_token() -> str:
-    """Get GitHub token from secure storage or environment"""
+    """Get GitHub token from secure storage or environment
+    
+    Enhanced credential management with production environment checks.
+    Ensures keyring is required for production deployments.
+    
+    Returns:
+        GitHub token string
+        
+    Raises:
+        SecurityError: If keyring is unavailable in production environment
+        
+    Security Notes:
+        - Requires keyring for production environments
+        - Falls back to environment variables only in development
+        - Logs security warnings for insecure fallbacks
+    """
     if KEYRING_AVAILABLE:
         try:
             settings = get_secure_settings()
@@ -224,6 +244,13 @@ def get_github_token() -> str:
                 return settings.github_token
         except Exception as e:
             print(f"Warning: Could not access secure config: {e}")
+    
+    # Production environment check
+    if not KEYRING_AVAILABLE and os.getenv('ENVIRONMENT') == 'production':
+        raise SecurityError("Keyring required for production deployment")
+    
+    if not KEYRING_AVAILABLE:
+        log_to_stderr("⚠️ WARNING: Using insecure environment variable fallback")
     
     # Fallback to environment variable
     return os.getenv("GITHUB_TOKEN", "")
