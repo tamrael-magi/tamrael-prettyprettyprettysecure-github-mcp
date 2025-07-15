@@ -269,3 +269,122 @@ SANITIZERS = {
     'url_logging': sanitize_url_for_logging,
     'token_text': sanitize_token_in_text,  # ADD THIS LINE
 }
+
+def validate_pagination_params(page=1, per_page=30):
+    # Validate pagination parameters with bounds checking
+    if not isinstance(page, int) or page < 1:
+        return False, "Invalid page number - must be positive integer"
+    if not isinstance(per_page, int) or per_page < 1 or per_page > 100:
+        return False, "Invalid per_page value - must be 1-100"
+    if page > 1000:  # Prevent excessive pagination
+        return False, "Page number too high - maximum 1000 pages"
+    return True, "Valid pagination parameters"
+
+def validate_array_input(data, field_name, max_items=100):
+    # Validate array inputs like assignees, labels with bounds
+    if not isinstance(data, list):
+        return False, f"Invalid {field_name} - must be array"
+    if len(data) > max_items:
+        return False, f"Too many {field_name} items - maximum {max_items}"
+    
+    # Validate each item is string and reasonable length
+    for item in data:
+        if not isinstance(item, str):
+            return False, f"Invalid {field_name} item - must be string"
+        if len(item) > 200:
+            return False, f"Invalid {field_name} item - too long (max 200 chars)"
+        if not re.match(r'^[a-zA-Z0-9_.-]+$', item):
+            return False, f"Invalid {field_name} item - contains invalid characters"
+    
+    return True, f"Valid {field_name} array"
+
+def validate_content_safety(content):
+    # Enhanced content validation for malicious payloads
+    if not isinstance(content, str):
+        return False, "Content must be string"
+    
+    # Check for suspicious patterns
+    suspicious_patterns = [
+        r'<script[^>]*>.*?</script>',  # Script tags
+        r'javascript:',               # JavaScript URLs
+        r'data:.*base64',            # Base64 data URLs
+        r'eval\s*\(',                # Eval functions
+        r'exec\s*\(',                # Exec functions
+        r'__import__\s*\(',          # Python imports
+        r'subprocess\.',             # Subprocess calls
+        r'os\.system\s*\(',          # OS system calls
+    ]
+    
+    for pattern in suspicious_patterns:
+        if re.search(pattern, content, re.IGNORECASE):
+            return False, "Content contains potentially malicious code"
+    
+    # Check content size (prevent DoS)
+    if len(content) > 10 * 1024 * 1024:  # 10MB limit
+        return False, "Content too large - maximum 10MB"
+    
+    return True, "Content validation passed"
+
+def validate_branch_name_enhanced(branch_name):
+    # Enhanced branch name validation with broader compatibility
+    if not isinstance(branch_name, str):
+        return False, "Branch name must be string"
+    
+    if not branch_name or len(branch_name) > 250:
+        return False, "Invalid branch name length"
+    
+    # Git branch name rules (comprehensive)
+    invalid_patterns = [
+        r'^\..*',                    # Cannot start with dot
+        r'.*\.$',                    # Cannot end with dot
+        r'.*\.\.\..*',                 # Cannot contain double dots
+        r'.*[\x00-\x1f\x7f].*',    # No control characters
+        r'.*[ ]$',                   # Cannot end with space
+        r'^[-].*',                   # Cannot start with dash
+        r'.*[~^:?*\[\]\\].*',       # Invalid Git characters
+        r'.*@{.*',                   # No @{ sequence
+        r'.*//.*',                   # No double slashes
+    ]
+    
+    for pattern in invalid_patterns:
+        if re.search(pattern, branch_name):
+            return False, "Invalid branch name format"
+    
+    return True, "Valid branch name"
+
+def validate_file_path_enhanced(file_path):
+    # Enhanced file path validation with security checks
+    if not isinstance(file_path, str):
+        return False, "File path must be string"
+    
+    # Basic length and format checks
+    if not file_path or len(file_path) > 4096:
+        return False, "Invalid file path length"
+    
+    # Security checks
+    security_patterns = [
+        r'\.\./',                    # Path traversal
+        r'\\\.\\.\.',                  # Windows path traversal
+        r'^/.*',                     # Absolute paths
+        r'^[a-zA-Z]:.*',            # Windows drive letters
+        r'.*\x00.*',                 # Null bytes
+        r'.*[<>:"|?*].*',           # Invalid filename characters
+    ]
+    
+    for pattern in security_patterns:
+        if re.search(pattern, file_path):
+            return False, "File path contains security risk"
+    
+    # File type validation
+    allowed_extensions = {
+        '.py', '.js', '.ts', '.jsx', '.tsx', '.md', '.txt', '.json', '.yaml', '.yml',
+        '.xml', '.csv', '.sql', '.html', '.css', '.scss', '.less', '.vue', '.go',
+        '.rs', '.cpp', '.c', '.h', '.hpp', '.java', '.kt', '.swift', '.rb', '.php',
+        '.sh', '.bash', '.zsh', '.ps1', '.dockerfile', '.gitignore', '.env'
+    }
+    
+    file_ext = Path(file_path).suffix.lower()
+    if file_ext and file_ext not in allowed_extensions:
+        return False, f"File type not allowed: {file_ext}"
+    
+    return True, "Valid file path"
