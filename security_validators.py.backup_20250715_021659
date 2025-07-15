@@ -66,8 +66,21 @@ def validate_repo_access_secure(repo_name: str, allowed_repos: Optional[List[str
     
     Uses constant-time comparison to prevent timing attacks that could leak
     repository names in the whitelist.
+    
+    Args:
+        repo_name: Repository name to check
+        allowed_repos: List of allowed repositories, or None for no restrictions
+        
+    Returns:
+        True if access is allowed, False otherwise
+        
+    Security Notes:
+        - Uses secrets.compare_digest() for constant-time comparison
+        - Prevents timing side-channel attacks
+        - Does not leak repository names in validation process
     """
     if allowed_repos is None:
+        # No whitelist configured - allow all repos
         return True
     
     # Constant-time comparison to prevent timing attacks
@@ -75,7 +88,7 @@ def validate_repo_access_secure(repo_name: str, allowed_repos: Optional[List[str
     for allowed_repo in allowed_repos:
         if secrets.compare_digest(repo_name.encode('utf-8'), allowed_repo.encode('utf-8')):
             allowed = True
-            # DON'T BREAK - continue checking all repos for constant time
+            break
     
     return allowed
 
