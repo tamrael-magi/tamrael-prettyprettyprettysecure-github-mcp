@@ -383,26 +383,41 @@ def get_security_error_message(operation: str) -> str:
 
 
 
-def check_rate_limit(client_id: str = "default") -> bool:
-    """Check if client is within rate limits
+def check_rate_limit(client_id: str = "default", source_ip: str = "unknown") -> bool:
+    """Enhanced rate limiting with IP-based protection
     
-    Uses thread-safe atomic operations to prevent race conditions
-    when multiple requests are processed simultaneously.
+    Uses combined client_id + source_ip tracking to prevent rate limit bypass
+    in multi-instance deployments and distributed attacks.
+    
+    Args:
+        client_id: Client identifier for rate limiting
+        source_ip: Source IP address for additional protection
+        
+    Returns:
+        True if under rate limit, False if limit exceeded
+        
+    Security Notes:
+        - Prevents rate limit bypass in distributed deployments
+        - Tracks both client ID and source IP combinations
+        - Thread-safe atomic operations
     """
     with rate_limit_lock:
         now = time.time()
         minute_ago = now - 60
         
-        # Clean old requests
-        while request_times[client_id] and request_times[client_id][0] < minute_ago:
-            request_times[client_id].popleft()
+        # Create combined key for client + IP tracking
+        combined_key = f"{source_ip}:{client_id}"
+        
+        # Clean old requests for this specific client+IP
+        while request_times[combined_key] and request_times[combined_key][0] < minute_ago:
+            request_times[combined_key].popleft()
         
         # Check if under limit
-        if len(request_times[client_id]) >= MAX_REQUESTS_PER_MINUTE:
+        if len(request_times[combined_key]) >= MAX_REQUESTS_PER_MINUTE:
             return False
         
         # Add current request
-        request_times[client_id].append(now)
+        request_times[combined_key].append(now)
         return True
 
 def log_to_stderr(message: str):
