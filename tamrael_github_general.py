@@ -899,6 +899,15 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         
         if "error" not in result and "content" in result:
             try:
+                # Validate encoded size BEFORE decoding
+                MAX_ENCODED_SIZE = MAX_CONTENT_SIZE * 4 // 3  # Account for base64 expansion
+                if len(result["content"]) > MAX_ENCODED_SIZE:
+                    audit_log("read", file_path, repo_name, "size_limit_exceeded")
+                    return [types.TextContent(
+                        type="text",
+                        text="SECURITY: File content exceeds size limit"
+                    )]
+                
                 # Audit log the file read
                 audit_log("read", file_path, repo_name, "success", {
                     "branch": branch,
