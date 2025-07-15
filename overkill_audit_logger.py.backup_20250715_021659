@@ -3,7 +3,6 @@ import json
 import time
 import secrets
 import os
-import tempfile
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pathlib import Path
@@ -54,39 +53,11 @@ class OverkillAuditLogger:
                 self.chain = []
     
     def _save_chain(self):
-        """Atomically save audit chain to prevent corruption"""
+        """Persist the audit chain to disk"""
         chain_file = self.log_dir / "audit_chain.json"
-        
         try:
-            # Create temporary file in same directory (atomic on same filesystem)
-            with tempfile.NamedTemporaryFile(
-                mode='w', 
-                dir=self.log_dir,
-                prefix='audit_chain_tmp_',
-                suffix='.json',
-                delete=False,
-                encoding='utf-8'
-            ) as tmp_file:
-                json.dump(self.chain, tmp_file, indent=2)
-                tmp_file.flush()
-                os.fsync(tmp_file.fileno())  # Force to disk
-                tmp_path = tmp_file.name
-            
-            # Atomic rename (POSIX guarantee, works on Windows too)
-            if os.name == 'nt':  # Windows
-                if chain_file.exists():
-                    chain_file.unlink()  # Windows requires removing target first
-            
-            os.rename(tmp_path, chain_file)
-            
-        except Exception as e:
-            # Clean up temp file on error
-            if 'tmp_path' in locals() and os.path.exists(tmp_path):
-                try:
-                    os.unlink(tmp_path)
-                except:
-                    pass
-            print(f"⚠️ Could not save audit chain atomically: {e}")
+            with open(chain_file, 'w') as f:
+                json.dump(self.chain, f, indent=2)
         except Exception as e:
             print(f"⚠️ Could not save audit chain: {e}")
     

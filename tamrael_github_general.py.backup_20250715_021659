@@ -204,31 +204,7 @@ ALLOWED_REPOS = None
 MAX_REQUESTS_PER_MINUTE = args.rate_limit
 
 # Rate limiting storage with thread safety
-# Bounded rate limiter to prevent memory exhaustion
-class BoundedRequestTracker:
-    def __init__(self, max_clients=1000):
-        self.request_times = {}
-        self.max_clients = max_clients
-    
-    def get_requests(self, client_id, source_ip="unknown"):
-        combined_key = f"{source_ip}:{client_id}"
-        
-        # Enforce client limit with simple LRU eviction
-        if len(self.request_times) >= self.max_clients and combined_key not in self.request_times:
-            # Remove oldest client (simple approach)
-            if self.request_times:
-                oldest_key = min(self.request_times.keys(), 
-                               key=lambda k: self.request_times[k][-1] if self.request_times[k] else 0)
-                del self.request_times[oldest_key]
-        
-        if combined_key not in self.request_times:
-            self.request_times[combined_key] = deque()
-        
-        return self.request_times[combined_key]
-
-# Use bounded tracker instead of unbounded defaultdict
-bounded_tracker = BoundedRequestTracker()
-request_times = bounded_tracker.request_times
+request_times = defaultdict(deque)
 rate_limit_lock = threading.Lock()
 
 # Initialize MCP server
@@ -270,19 +246,7 @@ def get_github_token() -> str:
             print(f"Warning: Could not access secure config: {e}")
     
     # Production environment check
-    # Enhanced production detection (prevents bypass)
-    production_indicators = [
-        os.getenv('ENVIRONMENT', '').lower() == 'production',
-        os.getenv('NODE_ENV', '').lower() == 'production',
-        os.getenv('DEPLOYMENT_ENV', '').lower() == 'production',
-        os.getenv('PROD', '').lower() == 'true',
-        os.path.exists('/etc/production'),
-        'kubernetes' in os.getenv('HOSTNAME', '').lower(),
-        'prod' in os.getenv('HOSTNAME', '').lower()
-    ]
-    is_production = any(production_indicators)
-    
-    if not KEYRING_AVAILABLE and is_production:
+    if not KEYRING_AVAILABLE and os.getenv('ENVIRONMENT') == 'production':
         raise SecurityError("Keyring required for production deployment")
     
     if not KEYRING_AVAILABLE:
@@ -471,18 +435,16 @@ def check_rate_limit(client_id: str = "default", source_ip: str = "unknown") -> 
         # Create combined key for client + IP tracking
         combined_key = f"{source_ip}:{client_id}"
         
-        client_requests = bounded_tracker.get_requests(client_id, source_ip)
-        
-        # Clean old requests
-        while client_requests and client_requests[0] < minute_ago:
-            client_requests.popleft()
+        # Clean old requests for this specific client+IP
+        while request_times[combined_key] and request_times[combined_key][0] < minute_ago:
+            request_times[combined_key].popleft()
         
         # Check if under limit
-        if len(client_requests) >= MAX_REQUESTS_PER_MINUTE:
+        if len(request_times[combined_key]) >= MAX_REQUESTS_PER_MINUTE:
             return False
         
         # Add current request
-        client_requests.append(now)
+        request_times[combined_key].append(now)
         return True
 
 def log_to_stderr(message: str):
@@ -884,7 +846,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         whitelist_info = f"Allowed repositories: {ALLOWED_REPOS}" if ALLOWED_REPOS else "All repositories allowed (no whitelist configured)"
         return [types.TextContent(
             type="text",
-            text="Access denied to requested resource"
+            text=f"SECURITY: Repository '{repo_name}' not accessible. {whitelist_info}"
         )]
     
     # Execute the requested operation
