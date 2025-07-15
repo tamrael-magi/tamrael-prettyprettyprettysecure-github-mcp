@@ -74,14 +74,14 @@ except ImportError:
 # Import security validators module (REQUIRED - no fallback)
 try:
     from security_validators import (
-    validate_branch_name,
-    validate_repo_access_secure, 
-    validate_file_path_enhanced,
-    validate_content_size,
-    sanitize_error_message,
-    sanitize_url_for_logging,
-    sanitize_token_in_text  # ✅ ADD THIS
-)
+        validate_branch_name,
+        validate_repo_access_secure, 
+        validate_file_path_enhanced,
+        validate_content_size,
+        sanitize_error_message,
+        sanitize_url_for_logging,
+        sanitize_token_in_text  # ✅ ADD THIS
+    )
 except ImportError as e:
     print("CRITICAL: Security validators module required but not available.")
     print("Ensure security_validators.py is in the same directory.")
@@ -96,6 +96,48 @@ try:
 except ImportError:
     AUDIT_AVAILABLE = False
     # Audit logging is optional - server works fine without it
+
+# Security utility functions
+def sanitize_for_logging(data):
+    """Remove sensitive information from data before logging"""
+    if isinstance(data, str):
+        # Use existing sanitize_token_in_text function
+        return sanitize_token_in_text(data)
+    elif isinstance(data, dict):
+        sanitized = {}
+        for key, value in data.items():
+            if any(sensitive in key.lower() for sensitive in ['token', 'password', 'secret', 'key', 'auth']):
+                sanitized[key] = '[REDACTED]'
+            else:
+                sanitized[key] = sanitize_for_logging(value)
+        return str(sanitized)
+    return str(data)
+
+def safe_error_response(message, context=None):
+    """Create error response with sanitized context"""
+    sanitized_context = sanitize_for_logging(context) if context else ""
+    return f"{message} {sanitized_context}".strip()
+
+def filter_github_response(response_data, operation="generic"):
+    """Filter GitHub API responses to remove sensitive metadata"""
+    if not isinstance(response_data, dict):
+        return response_data
+    
+    # Keep only essential fields
+    essential_fields = {
+        'name', 'full_name', 'description', 'private', 'updated_at', 
+        'language', 'title', 'body', 'content', 'state', 'number',
+        'created_at', 'size', 'path', 'type', 'html_url'
+    }
+    
+    def filter_dict(data):
+        if isinstance(data, dict):
+            return {k: filter_dict(v) for k, v in data.items() if k in essential_fields}
+        elif isinstance(data, list):
+            return [filter_dict(item) for item in data]
+        return data
+    
+    return filter_dict(response_data)
 
 # Risk-based operation categorization
 OPERATION_RISKS = {
@@ -329,8 +371,16 @@ async def get_smart_default_repos(github_token: str) -> list[str]:
                 for repo in repos:
                     if repo.get("private", False):
                         # Private repos: Apply 30-day smart filtering for IP protection
-                        if repo.get("pushed_at", "") > thirty_days_ago:
-                            private_repos.append(repo["name"])
+                        try:
+                            pushed_at_str = repo.get("pushed_at", "1970-01-01T00:00:00Z")
+                            if pushed_at_str.endswith('Z'):
+                                pushed_at_str = pushed_at_str[:-1] + '+00:00'
+                            pushed_at = datetime.fromisoformat(pushed_at_str)
+                            if pushed_at > thirty_days_ago:
+                                private_repos.append(repo["name"])
+                        except (ValueError, TypeError):
+                            # If date parsing fails, skip this repo
+                            continue
                     else:
                         # Public repos: Always allow (no IP risk)
                         public_repos.append(repo["name"])
@@ -340,15 +390,15 @@ async def get_smart_default_repos(github_token: str) -> list[str]:
                 
                 # Log the intelligent filtering results
                 if private_repos:
-                    log_to_stderr(f"🔒 Private repos (30-day filter): {len(private_repos)} active")
+                    log_to_stderr(sanitize_for_logging(f"🔒 Private repos (30-day filter): {len(private_repos)} active"))
                 if public_repos:
-                    log_to_stderr(f"🌐 Public repos (always allowed): {len(public_repos)} total")
+                    log_to_stderr(sanitize_for_logging(f"🌐 Public repos (always allowed): {len(public_repos)} total"))
                 
                 # Limit to reasonable number to prevent overwhelming
                 smart_repos = smart_repos[:20]
                 
     except Exception as e:
-        log_to_stderr(f"Smart whitelist detection failed: {str(e)}")
+        log_to_stderr(sanitize_for_logging(f"Smart whitelist detection failed: {str(e)}"))
         # Fallback to empty list - will require manual configuration
         return []
     
@@ -378,8 +428,8 @@ async def initialize_smart_whitelist() -> list[str]:
         if github_token:
             smart_repos = await get_smart_default_repos(github_token)
             if smart_repos:
-                log_to_stderr(f"🧠 SMART IP PROTECTION: Auto-detected {len(smart_repos)} repositories")
-                log_to_stderr(f"   Smart repos: {', '.join(smart_repos)}")
+                log_to_stderr(sanitize_for_logging(f"🧠 SMART IP PROTECTION: Auto-detected {len(smart_repos)} repositories"))
+                log_to_stderr(sanitize_for_logging(f"   Smart repos: {', '.join(smart_repos)}"))
             else:
                 log_to_stderr("⚠️  No smart repos detected.")
         else:
@@ -390,8 +440,8 @@ async def initialize_smart_whitelist() -> list[str]:
         manual_repos = []
         if args.allowed_repos:
             manual_repos = [repo.strip() for repo in args.allowed_repos.split(",") if repo.strip()]
-            log_to_stderr(f"📋 MANUAL ADDITIONS: {len(manual_repos)} repositories specified")
-            log_to_stderr(f"   Manual repos: {', '.join(manual_repos)}")
+            log_to_stderr(sanitize_for_logging(f"📋 MANUAL ADDITIONS: {len(manual_repos)} repositories specified"))
+            log_to_stderr(sanitize_for_logging(f"   Manual repos: {', '.join(manual_repos)}"))
         
         # Combine smart + manual (remove duplicates while preserving order)
         combined_repos = smart_repos.copy()
@@ -400,7 +450,7 @@ async def initialize_smart_whitelist() -> list[str]:
                 combined_repos.append(repo)
         
         if combined_repos:
-            log_to_stderr(f"🚀 TOTAL WHITELIST: {len(combined_repos)} repositories ({len(smart_repos)} smart + {len(manual_repos)} manual)")
+            log_to_stderr(sanitize_for_logging(f"🚀 TOTAL WHITELIST: {len(combined_repos)} repositories ({len(smart_repos)} smart + {len(manual_repos)} manual)"))
             log_to_stderr("💡 Add more with: --allowed-repos 'additional1,additional2'")
         else:
             log_to_stderr("⚠️  No repositories configured. Add manually: --allowed-repos 'repo1,repo2'")
@@ -511,11 +561,11 @@ def audit_log(operation: str, file_path: str, repo: str, result: str = "success"
             
             # Log the audit action (but don't spam)
             if operation in ["create", "delete"] or len(audit_logger.chain) % 10 == 0:
-                log_to_stderr(f"📹 AUDIT: {operation.upper()} {file_path} | Hash: {entry_hash[:8]}...")
+                log_to_stderr(sanitize_for_logging(f"📹 AUDIT: {operation.upper()} {file_path} | Hash: {entry_hash[:8]}..."))
                 
         except Exception as e:
             # Audit logging should never break the main functionality
-            log_to_stderr(f"⚠️ AUDIT: Logging failed: {str(e)[:50]}...")
+            log_to_stderr(sanitize_for_logging(f"⚠️ AUDIT: Logging failed: {str(e)[:50]}..."))
 
 async def make_github_request(method: str, endpoint: str, data: Optional[dict] = None) -> dict:
     """Make HTTP request to GitHub API with comprehensive security"""
@@ -539,7 +589,7 @@ async def make_github_request(method: str, endpoint: str, data: Optional[dict] =
         url = f"https://api.github.com{endpoint}"
         
         # Log sanitized URL (no token exposure)
-        log_to_stderr(f"Making {method} request to {sanitize_url_for_logging(url)}")
+        log_to_stderr(sanitize_for_logging(f"Making {method} request to {sanitize_url_for_logging(url)}"))
         
         # Handle data properly
         json_data = data if data is not None else {}
@@ -558,7 +608,7 @@ async def make_github_request(method: str, endpoint: str, data: Optional[dict] =
             else:
                 return {"error": "Unsupported HTTP method"}
             
-            log_to_stderr(f"Response status: {response.status_code}")
+            log_to_stderr(sanitize_for_logging(f"Response status: {response.status_code}"))
             
             # Enhanced error handling
             if response.status_code == 401:
@@ -582,17 +632,17 @@ async def make_github_request(method: str, endpoint: str, data: Optional[dict] =
         log_to_stderr("Request to GitHub API timed out")
         return {"error": "Request timeout"}
     except httpx.NetworkError as e:
-        log_to_stderr(f"Network error: {type(e).__name__}")
+        log_to_stderr(sanitize_for_logging(f"Network error: {type(e).__name__}"))
         return {"error": "Network error"}
     except Exception as e:
         error_msg = sanitize_error_message(str(e))
-        log_to_stderr(f"Request error: {error_msg}")
+        log_to_stderr(sanitize_for_logging(f"Request error: {error_msg}"))
         return {"error": error_msg}
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """List available GitHub MCP tools based on security level"""
-    log_to_stderr(f"Listing tools for security level: {SECURITY_LEVEL}")
+    log_to_stderr(sanitize_for_logging(f"Listing tools for security level: {SECURITY_LEVEL}"))
     
     tools = []
     
@@ -855,14 +905,14 @@ async def handle_list_tools() -> list[types.Tool]:
             }
         ))
     
-    log_to_stderr(f"Returning {len(tools)} tools for security level '{SECURITY_LEVEL}'")
+    log_to_stderr(sanitize_for_logging(f"Returning {len(tools)} tools for security level '{SECURITY_LEVEL}'"))
     return tools
 
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     """Handle GitHub tool execution with comprehensive security"""
     
-    log_to_stderr(f"Executing tool: {name}")
+    log_to_stderr(sanitize_for_logging(f"Executing tool: {name}"))
     
     # Rate limiting check
     if not check_rate_limit():
@@ -1416,27 +1466,27 @@ async def main():
         
         # Display current configuration
         security_config = SECURITY_LEVELS.get(SECURITY_LEVEL, {})
-        log_to_stderr(f"🛡️  Security Level: {SECURITY_LEVEL}")
-        log_to_stderr(f"   Description: {security_config.get('description', 'Unknown')}")
+        log_to_stderr(sanitize_for_logging(f"🛡️  Security Level: {SECURITY_LEVEL}"))
+        log_to_stderr(sanitize_for_logging(f"   Description: {security_config.get('description', 'Unknown')}"))
         
         allowed_ops = [op for op in OPERATION_RISKS.keys() if is_operation_allowed(op)]
-        log_to_stderr(f"⚡ Allowed Operations ({len(allowed_ops)}): {', '.join(allowed_ops)}")
+        log_to_stderr(sanitize_for_logging(f"⚡ Allowed Operations ({len(allowed_ops)}): {', '.join(allowed_ops)}"))
         
         if ALLOWED_REPOS is None:
             log_to_stderr("🌐 Repository Access: All repositories allowed (open mode)")
         elif len(ALLOWED_REPOS) == 0:
             log_to_stderr("🚫 Repository Access: No repositories configured")
         else:
-            log_to_stderr(f"📋 Active Whitelist ({len(ALLOWED_REPOS)}): {', '.join(ALLOWED_REPOS)}")
+            log_to_stderr(sanitize_for_logging(f"📋 Active Whitelist ({len(ALLOWED_REPOS)}): {', '.join(ALLOWED_REPOS)}"))
         
-        log_to_stderr(f"⏱️  Rate Limit: {MAX_REQUESTS_PER_MINUTE} requests/minute")
-        log_to_stderr(f"📁 Max Content Size: {MAX_CONTENT_SIZE} bytes")
+        log_to_stderr(sanitize_for_logging(f"⏱️  Rate Limit: {MAX_REQUESTS_PER_MINUTE} requests/minute"))
+        log_to_stderr(sanitize_for_logging(f"📁 Max Content Size: {MAX_CONTENT_SIZE} bytes"))
         
         # Check token configuration
         github_token = get_github_token()
         if github_token:
             token_preview = f"{github_token[:8]}...{github_token[-4:]}" if len(github_token) > 12 else "***"
-            log_to_stderr(f"🔑 GitHub Token: ✅ Configured ({token_preview})")
+            log_to_stderr(sanitize_for_logging(f"🔑 GitHub Token: ✅ Configured ({token_preview})"))
             
             if KEYRING_AVAILABLE:
                 log_to_stderr("🔐 Credential Storage: ✅ OS Keyring (Encrypted)")
@@ -1476,7 +1526,7 @@ async def main():
             
     except Exception as e:
         error_msg = sanitize_error_message(str(e))
-        log_to_stderr(f"❌ Server failed to start: {error_msg}")
+        log_to_stderr(sanitize_for_logging(f"❌ Server failed to start: {error_msg}"))
         import traceback
         traceback.print_exc(file=sys.stderr)
         sys.exit(1)
