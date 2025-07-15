@@ -69,12 +69,13 @@ except ImportError:
 # Import security validators module (REQUIRED - no fallback)
 try:
     from security_validators import (
-        validate_branch_name,
-        validate_repo_access_secure, 
-        validate_file_path_enhanced,
-        sanitize_error_message,
-        sanitize_url_for_logging
-    )
+    validate_branch_name,
+    validate_repo_access_secure, 
+    validate_file_path_enhanced,
+    validate_content_size,
+    sanitize_error_message,
+    sanitize_url_for_logging
+)
 except ImportError as e:
     print("CRITICAL: Security validators module required but not available.")
     print("Ensure security_validators.py is in the same directory.")
@@ -373,64 +374,13 @@ def get_security_error_message(operation: str) -> str:
     else:
         return f"Operation '{operation}' is not allowed at security level '{SECURITY_LEVEL}'"
 
-def sanitize_url_for_logging(url: str) -> str:
-    """Remove sensitive information from URLs for safe logging"""
-    # Remove tokens from URL parameters
-    sanitized = re.sub(r'[?&]token=[^&]*', '?token=***', url)
-    sanitized = re.sub(r'[?&]access_token=[^&]*', '?access_token=***', sanitized)
-    # Remove bearer tokens from paths
-    sanitized = re.sub(r'/tokens/[a-zA-Z0-9_-]+', '/tokens/***', sanitized)
-    return sanitized
 
-def sanitize_error_message(error: str) -> str:
-    """Sanitize error messages to prevent information disclosure"""
-    error_lower = error.lower()
-    
-    # Common error patterns
-    if any(word in error_lower for word in ['permission', 'unauthorized', 'forbidden']):
-        return "Access denied"
-    if 'not found' in error_lower:
-        return "Resource not found"
-    if 'rate limit' in error_lower:
-        return "Rate limit exceeded"
-    if any(word in error_lower for word in ['network', 'connection']):
-        return "Network error"
-    if 'timeout' in error_lower:
-        return "Request timeout"
-    
-    # For other errors, return generic message to prevent info leakage
-    return "Operation failed"
 
-def validate_file_path(file_path: str) -> bool:
-    """Validate file path to prevent path traversal attacks"""
-    if not file_path:
-        return False
-    
-    # Check for path traversal attempts
-    if '..' in file_path:
-        return False
-    
-    # Check for absolute paths
-    if file_path.startswith('/') or file_path.startswith('\\'):
-        return False
-    
-    # Check for Windows drive letters
-    if len(file_path) > 1 and file_path[1] == ':':
-        return False
-    
-    # Check path length
-    if len(file_path) > MAX_FILE_PATH_LENGTH:
-        return False
-    
-    # Check for null bytes and other dangerous characters
-    if '\x00' in file_path:
-        return False
-    
-    return True
 
-def validate_content_size(content: str) -> bool:
-    """Validate content size to prevent DoS attacks"""
-    return len(content.encode('utf-8')) <= MAX_CONTENT_SIZE
+
+
+
+
 
 def check_rate_limit(client_id: str = "default") -> bool:
     """Check if client is within rate limits
@@ -925,7 +875,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         branch = arguments.get("branch", "main")
         
         # Security validations
-        if not validate_file_path(file_path):
+        if not validate_file_path_enhanced(file_path):
             return [types.TextContent(
                 type="text",
                 text="SECURITY: Invalid file path detected (path traversal attempt blocked)"
@@ -1041,7 +991,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         branch = arguments.get("branch", "main")
         
         # Security validations
-        if not validate_file_path(file_path):
+        if not validate_file_path_enhanced(file_path):
             return [types.TextContent(
                 type="text",
                 text="SECURITY: Invalid file path detected (path traversal attempt blocked)"
