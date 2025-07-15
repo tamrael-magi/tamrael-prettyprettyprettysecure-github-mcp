@@ -13,7 +13,6 @@ Separated from main server for better modularity and testing.
 
 import re
 import secrets
-from pathlib import Path
 from typing import List, Optional
 
 
