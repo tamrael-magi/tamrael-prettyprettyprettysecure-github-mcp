@@ -351,6 +351,12 @@ I'm building these for my own workflow but would be happy to share if there's co
 
 _Note: These are personal tools. Community interest would determine if I make them available._
 
+______
+
+## 🏗️ Security Architecture ![PPPS Security Architecture](docs/images/security_architecture.jpg) *Comprehensive security-by-construction design with local-first principles*
+
+_____
+
 ## I Was Supposed to Build a Simple Tool (Oops)
 
 **Fair warning:** I've been formally coding for less than a month. Made my GitHub account 3 weeks ago and was writing code in Notepad until recently (thank you, VSCode).
@@ -412,7 +418,7 @@ Found a security issue? Please report responsibly:
 3. **Include**: Steps to reproduce, impact assessment, suggested fixes
 4. **Response**: Maybe. Depends on severity and my mood.
 
-See SECURITY.md for full vulnerability disclosure policy.
+See SECURITY_POLICY.md for full vulnerability disclosure policy.
 ## License
 
 MIT License - See LICENSE file for details.
