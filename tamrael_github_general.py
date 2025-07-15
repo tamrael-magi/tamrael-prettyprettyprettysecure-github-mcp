@@ -74,7 +74,8 @@ try:
     validate_file_path_enhanced,
     validate_content_size,
     sanitize_error_message,
-    sanitize_url_for_logging
+    sanitize_url_for_logging,
+    sanitize_token_in_text  # ✅ ADD THIS
 )
 except ImportError as e:
     print("CRITICAL: Security validators module required but not available.")

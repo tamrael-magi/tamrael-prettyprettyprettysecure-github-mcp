@@ -238,6 +238,35 @@ def validate_issue_title(title: str, max_length: int = 1000) -> bool:
     return True
 
 
+def sanitize_token_in_text(text: str) -> str:
+    """Remove GitHub tokens from any text content
+    
+    Args:
+        text: Text that may contain GitHub tokens
+        
+    Returns:
+        Text with tokens replaced by placeholders
+        
+    Security Notes:
+        - Removes new format GitHub tokens (gh[ps]_...)
+        - Removes classic 40-character tokens
+        - Removes Bearer token headers
+    """
+    # GitHub personal access tokens (new format)
+    text = re.sub(r'gh[ps]_[a-zA-Z0-9]{36}', 'TOKEN_REDACTED', text)
+    
+    # Classic GitHub tokens (40 hex characters)
+    text = re.sub(r'\b[a-fA-F0-9]{40}\b', 'TOKEN_REDACTED', text)
+    
+    # Bearer tokens in authorization headers
+    text = re.sub(r'Bearer\s+[a-zA-Z0-9_-]+', 'Bearer TOKEN_REDACTED', text, re.IGNORECASE)
+    
+    # Authorization header tokens
+    text = re.sub(r'Authorization:\s*[a-zA-Z0-9_-]+', 'Authorization: TOKEN_REDACTED', text, re.IGNORECASE)
+    
+    return text
+
+
 # Security validation registry for easy testing and maintenance
 VALIDATORS = {
     'branch_name': validate_branch_name,
@@ -251,4 +280,5 @@ VALIDATORS = {
 SANITIZERS = {
     'error_message': sanitize_error_message,
     'url_logging': sanitize_url_for_logging,
+    'token_text': sanitize_token_in_text,  # ADD THIS LINE
 }
