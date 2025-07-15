@@ -1,0 +1,25 @@
+# Secure GitHub MCP Server Dependencies v1.0.1
+# Enterprise-grade security with OS keyring integration
+
+# Core MCP framework
+mcp>=1.0.0
+
+# HTTP client for GitHub API (async support)
+httpx>=0.25.0
+
+# Enterprise Security Dependencies
+keyring>=24.0.0                # OS keyring integration (Windows/macOS/Linux)
+pydantic>=2.0.0               # Secure settings with SecretStr
+pydantic-settings>=2.0.0      # Configuration management
+
+# Standard library dependencies (included in Python 3.8+)
+# - asyncio (built-in)
+# - json (built-in) 
+# - sys (built-in)
+# - os (built-in)
+# - base64 (built-in)
+# - typing (built-in)
+# - re (built-in)
+# - time (built-in)
+# - collections (built-in)
+# - datetime (built-in)
