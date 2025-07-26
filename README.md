@@ -9,6 +9,8 @@ Built for and by a dev noob (me) who was using Notepad a month ago, but brings c
 
 **Pretty, Pretty, Pretty Secure because everyone else calls their stuff "military-grade" and "enterprise-ready" like they're selling special-ops tactical toilet paper.**
 
+P.S. If you like this and decide to use my code in your project or product, please properly give credit and link back to my GitHub or repo. Thanks!
+
 ---
 
 
