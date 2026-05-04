@@ -489,6 +489,7 @@ This MCP server demonstrates that strong security and powerful functionality can
     - Artifacts system for document creation enabled
 
 ---
+[![MCP Badge](https://lobehub.com/badge/mcp/your-username-ppps-github-mcp)](https://lobehub.com/mcp/your-username-ppps-github-mcp)
 
 **🔒 Part of the AI User Empowerment movement**  
 **📜 See AI_USER_EMPOWERMENT_MANIFESTO.md for the bigger picture**
