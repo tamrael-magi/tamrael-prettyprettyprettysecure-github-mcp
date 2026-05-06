@@ -1,7 +1,7 @@
 # Tamrael's PPPS (Pretty, Pretty, Pretty, Secure) GitHub MCP Server
 
 [![MCP Badge](https://lobehub.com/badge/mcp/tamrael-magi-ppps-github-mcp)](https://lobehub.com/mcp/tamrael-magi-ppps-github-mcp)
-![Version](https://img.shields.io/badge/version-2.1.1-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![Release Date](https://img.shields.io/badge/released-May%206%202026-green)
 ![Status](https://img.shields.io/badge/status-End%20of%20Life-red)
 
