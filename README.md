@@ -36,6 +36,18 @@ P.S. If you like this and decide to use my code in your project or product, plea
 
 ### Installation (5 minutes)
 
+**One-liner (Linux/Mac):**
+```bash
+curl -sSL https://raw.githubusercontent.com/tamrael-magi/tamrael-prettyprettyprettysecure-github-mcp/main/install.sh | bash
+```
+
+**One-liner (Windows PowerShell):**
+```powershell
+powershell -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tamrael-magi/tamrael-prettyprettyprettysecure-github-mcp/main/install.bat' -OutFile '%TEMP%\ppps-install.bat' && start '' '%TEMP%\ppps-install.bat'"
+```
+
+**Manual:**
+
 1. **Download**
 ```bash
 git clone https://github.com/tamrael-magi/tamrael-prettyprettyprettysecure-github-mcp.git
