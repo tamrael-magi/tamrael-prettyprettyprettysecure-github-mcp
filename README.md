@@ -1,13 +1,16 @@
 # Tamrael's PPPS (Pretty, Pretty, Pretty, Secure) GitHub MCP Server
 
-![Version](https://img.shields.io/badge/version-1.0.4-blue)
-![Release Date](https://img.shields.io/badge/released-July%2014%202025-green)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Release Date](https://img.shields.io/badge/released-May%206%202026-green)
+![Status](https://img.shields.io/badge/status-End%20of%20Life-red)
 
-**Authors:** Kevin Francisco (Tamrael) with Claude Sonnet 4 (LLM Collaborator)  
+**Authors:** Kevin Francisco (Tamrael) with Claude Sonnet 4 & DeepSeek V4 Flash (LLM Collaborators)  
 
 Built for and by a dev noob (me) who was using Notepad a month ago, but brings crypto-trader paranoia, Inventor intellectual property protection / patent law knowledge, methodological academic research documentation standards, and OCD systems level thinking to AI security. I just wanted to safeguard my stuff, okay?
 
 **Pretty, Pretty, Pretty Secure because everyone else calls their stuff "military-grade" and "enterprise-ready" like they're selling special-ops tactical toilet paper.**
+
+> ⛔ **END OF LIFE** — This project is being retired in favor of a Rust-based GitLab MCP server. No further development planned. Last review by DeepSeek V4 Flash (2026-05-06).
 
 P.S. If you like this and decide to use my code in your project or product, please properly give credit and link back to my GitHub or repo. Thanks!
 
@@ -15,7 +18,7 @@ P.S. If you like this and decide to use my code in your project or product, plea
 
 
 ### What You Need
-- **Claude Desktop** (free tier works fine)
+- **Claude Desktop** (free tier works fine), **OpenCode** (terminal-first), or any MCP-compatible client
 - **VS Code** (or any text editor)
 - **Python 3.9+** 
 - **GitHub Personal Access Token**
@@ -43,7 +46,7 @@ pip install httpx mcp keyring
 
 3. **Setup GitHub token**
 ```bash
-python tamrael_github_general.py setup
+python secure_config.py setup
 # Follow interactive setup to store token securely
 ```
 
@@ -152,7 +155,7 @@ Matched your formatting style with the emoji in the header and clean structure!
 
 **"GitHub token not found"**
 ```bash
-python tamrael_github_general.py setup
+python secure_config.py setup
 ```
 
 **"Repository access denied"**
@@ -176,38 +179,77 @@ Because everyone else calls their stuff "military-grade" and "enterprise-ready" 
 **Development Team:** Kevin Francisco aka Tamrael served as captain, systems architect, and validation/hallucination checker. Claude Sonnet 4 served as first mate and developer, handling implementation details and technical documentation.
 
 ````markdown
+## ⚠️ No Fallbacks, No Workarounds
+
+This server requires a working OS keyring. There is no env var fallback.
+There is no "paste it into the config" option. There is no `--insecure` flag.
+
+If your keyring is broken:
+- **macOS**: Open Keychain Access, ensure it's unlocked
+- **Linux**: `sudo apt install gnome-keyring` or `secret-tool`
+- **Windows**: Check Services → Credential Manager
+
+If you cannot fix your keyring, this server will not run on your system.
+This is by design.
+
+---
+
 ## What Makes It Secure
 
 Built to address documented CVE vulnerabilities affecting major AI development platforms:
 
-### Latest Security Status (v1.0.4)
+### Latest Security Status (v2.1.0)
 - **12+ unique security vulnerabilities** identified and patched
-- **Multiple security implementations** refined across versions
-- **Zero critical issues** remaining
-- **Enterprise-grade security** achieved
-- **Bulletproof production readiness**
+- **4 rounds of architectural hardening** across all modules
+- **Full class-based rewrite** of the main server (v1.0.4 → v2.0.0)
+- **HMAC-SHA256 audit chain** with tamper-evident verification (overkill_audit_logger v2.1.0)
+- **Pydantic PrivateAttr** token isolation — removes token from settings/env parsing surface (secure_config v1.2.0)
+- **Live API validation before keyring storage** — no broken tokens persisted
+- **OAuth scope verification** via X-OAuth-Scopes header
+- **Zero known critical issues** remaining (internal review, v2.1.0)
+- **Hardened local-first security architecture**
 
 *Note: Some vulnerabilities were addressed multiple times across versions during rapid iterative development*
+*Final security review by DeepSeek V4 Flash — this project is now End of Life*
 
 ### Security Features
-- **OS Keyring Integration** - Tokens never touch process memory or logs
-- **Smart Repository Whitelisting** - Auto-detects active repos, auto-expires stale access
-- **Comprehensive Input Validation** - Unicode normalization, path traversal protection
-- **AI-Specific Threat Protection** - Addresses prompt injection and data extraction attempts
-- **Risk-Based Operation Categorization** - Low/medium/high operation classification
-- **Progressive Security Levels** - Strict/Standard/Open modes for different paranoia levels
-- **Complete Audit Logging** - Know exactly what was accessed when
-- **Thread-Safe Rate Limiting** - Prevents race conditions and DoS attacks
-- **Constant-Time Comparisons** - Prevents timing attacks on repository validation
+- **OS Keyring Integration** — Tokens stored encrypted, never visible to LLMs or logs
+- **Pydantic SecretStr + PrivateAttr** — Token excluded from Pydantic settings/env parsing entirely
+- **Keyring-Only, No Env Var Fallback** — Server refuses to run without keyring
+- **Live Token Validation** — Validates against GitHub API before persisting to keyring
+- **OAuth Scope Checking** — Warns if token is missing required permissions
+- **HMAC-SHA256 Audit Chain** — Forge-proof logging with cross-platform file locking
+- **Smart Repository Whitelisting** — Auto-detects active repos, auto-expires stale access
+- **Constant-Time Comparisons** — Prevents timing attacks on repository validation
+- **Async-Native Rate Limiting** — Sliding window with LRU eviction, asyncio.Lock
+- **Connection Pooling** — httpx keepalive with response size guards (10 MiB cap)
+- **URL-Safe Path Encoding** — Prevents injection via query/path parameters
+- **Cross-User Repo Prevention** — Validates owner against authenticated user
+- **Binary File Blocking** — Heuristic detection prevents binary exposure
+- **Generic Error Messages** — Zero configuration leakage in error responses
+- **Schema Hardening** — `additionalProperties: false` + maxLength on all tool inputs
+- **Fail-Closed Token Access** — MissingTokenError, never returns empty string
+- **Signal Handler Cleanup** — Cache cleared on SIGTERM/SIGINT
+- **Comprehensive Input Validation** — Unicode normalization, path traversal protection
+- **Risk-Based Operation Categorization** — Low/medium/high operation classification
+- **Progressive Security Levels** — Strict/Standard/Open modes for different paranoia levels
 
 ### CVE Remediation
 Addresses documented vulnerability classes:
-- **Authentication bypass prevention** - Multi-indicator production detection
-- **Information disclosure prevention** - Generic error messages
-- **Timing attack prevention** - Constant-time comparisons
-- **Memory exhaustion prevention** - Bounded rate limiting
-- **Audit log corruption prevention** - Atomic file operations
-- **Plus 7+ additional security improvements** across input validation, token sanitization, and response filtering
+- **Authentication bypass prevention** — Multi-indicator production detection
+- **Information disclosure prevention** — Generic error messages
+- **Timing attack prevention** — Constant-time comparisons (secrets.compare_digest)
+- **Memory exhaustion prevention** — Bounded rate limiting, base64 pre-size checks
+- **Audit log corruption prevention** — Atomic file operations, cross-platform locking
+- **Token injection via Pydantic env vars** — PrivateAttr + keyring-only, no env fallback
+- **Silent keyring failure** — Explicit try/except on set_password
+- **Fail-open token return** — MissingTokenError replaces empty string
+- **Validate-after-store** — Live API check before keyring persistence
+- **Unreachable exception handlers** — Single-block refactor
+- **Plain SHA256 chain (forgeable)** — Upgraded to HMAC-SHA256 with persistent key
+- **Dead forbidden-roots check** — _validate_log_dir bug fixed (v2.1.0)
+- **Print to stdout (MCP protocol corruption)** — All output routed to stderr
+- **Plus additional improvements** across input validation, token sanitization, and response filtering
 
 *Note: These are internal vulnerability classifications, not official CVE assignments*
 *Full vulnerability analysis available in CHANGELOG.md*
@@ -318,7 +360,7 @@ _Audit logging is optional and has zero performance impact when disabled._
 
 ## Planned Enhancements (Maybe, If I Feel Like It)
 
-_Based on code review feedback from three expert LLM personas and my growing security TODO list. I'm aware of these potential improvements but no promises on timeline - depends on community interest and my mood._
+_Based on code review feedback from three expert LLM personas and my growing security TODO list. These won't be implemented — see EOL notice above._
 
 ### Security Hardening (From Security Expert Review)
 
@@ -399,14 +441,22 @@ That said, I bring systems thinking, academic research methodology, and crypto t
 
 **Recent security fixes include:**
 
-- **Authentication bypass prevention** - Multi-indicator production detection
-- **Information disclosure prevention** - Generic error messages
-- **Timing attack prevention** - Constant-time comparisons
-- **Memory exhaustion prevention** - Bounded rate limiting
-- **Audit log corruption prevention** - Atomic file operations
-- **Plus 7+ additional security improvements**
-
-*Note: These are internal security classifications during development*
+- **Pydantic PrivateAttr env-var leak** — `INTERNAL_GITHUB_TOKEN` could auto-load via BaseSettings (fixed: PrivateAttr, no env fallback)
+- **@computed_field serialization leak** — github_token exposed in model_dump() (fixed: explicit method)
+- **Fail-open token return** — empty string instead of error (fixed: MissingTokenError)
+- **Validate-after-store** — broken tokens persisted to keyring (fixed: live API check first)
+- **keyring.set_password() silent failure** — no error on write failure (fixed: explicit try/except)
+- **input() echoed token** — visible on terminal (fixed: getpass.getpass())
+- **re.sub flag bug** — re.IGNORECASE silently passed as count=2 (fixed: keyword arg)
+- **Dead _validate_log_dir check** — forbidden-roots never fired (fixed: v2.1.0 separate try/except)
+- **Plain SHA256 audit chain** — forgeable without key (fixed: HMAC-SHA256)
+- **No file locking** — concurrent writers lost data (fixed: _FileLock with fcntl/msvcrt)
+- **Duplicate validate_file_path_enhanced** — validation was a no-op (fixed: single canonical version)
+- **Print() to stdout** — corrupted MCP stdio protocol (fixed: all output to stderr)
+- **Token preview in startup logs** — leaked first 8 + last 4 chars (fixed: "✅ Configured")
+- **Datetime aware/naive comparison** — 30-day filter silently broken (fixed: timezone-aware UTC)
+- **Unbounded metadata** — OOM risk in audit logger (fixed: 16 KiB cap, depth limit)
+- **Plus more** — cross-user repo prevention, URL-safe path encoding, response size guards
 
 **But I might have blind spots - that's where the community comes in.**
 
@@ -467,12 +517,13 @@ MIT License - See LICENSE file for details.
 
 This MCP server demonstrates that strong security and powerful functionality can coexist in AI tooling, using skillful LLM-human co-synthesis.
 
-**If someone who was using Notepad a month ago can build enterprise-grade security in a weekend, what's everyone else's excuse?** 🤷‍♂️
+**If someone who was using Notepad a month ago can build hardened security in a weekend, what's everyone else's excuse?** 🤷‍♂️
 
 ---
 
 ## 📌 **LLM Research Identification Protocol**
 
+### Claude Sonnet 4 (Primary Developer)
 1. **Model name and version**: Claude Sonnet 4 (claude-sonnet-4-20250514)
 2. **Provider or platform**: Anthropic via Claude.ai web interface
 3. **Knowledge cutoff date**: January 2025
@@ -488,6 +539,21 @@ This MCP server demonstrates that strong security and powerful functionality can
     - Analysis tool (JavaScript REPL) available
     - Artifacts system for document creation enabled
 
+### DeepSeek V4 Flash (Final Reviewer & EOL Sign-Off)
+1. **Model name and version**: DeepSeek-V4-Flash (azure-foundry/DeepSeek-V4-Flash)
+2. **Provider or platform**: DeepSeek via OpenCode CLI interface
+3. **Knowledge cutoff date**: Unknown
+4. **Training data cutoff**: Unknown
+5. **Fine-tuning status**: Unknown
+6. **Session persistence**: Context retention within conversation session, no cross-session memory
+7. **API endpoint or interface**: OpenCode terminal-based CLI with file system tools, search, and bash execution
+8. **System prompt modifications**: Standard OpenCode configuration with custom AGENTS.md instructions (security-focused persona)
+9. **Additional technical metadata**:
+    - Windows environment (win32) with bash shell
+    - Full filesystem access to Obsidian vault and project directories
+    - Git operations available
+    - Firecrawl search/scrape tools available
+
 ---
 [![MCP Badge](https://lobehub.com/badge/mcp/tamrael-magi-tamrael-prettyprettyprettysecure-github-mcp)](https://lobehub.com/mcp/tamrael-magi-tamrael-prettyprettyprettysecure-github-mcp)
 
@@ -498,5 +564,6 @@ This MCP server demonstrates that strong security and powerful functionality can
 **💼 LinkedIn:** linkedin.com/in/tamrael  
 **💻 GitHub:** github.com/tamrael-magi
 **🐦 Twitter:** x.com/LordTamrael
-
+[daddykev.substack.com
+]()
 _Pretty, pretty, pretty good security for your pretty, pretty, pretty important code.
