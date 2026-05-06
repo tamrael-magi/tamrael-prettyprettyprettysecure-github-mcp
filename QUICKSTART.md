@@ -106,6 +106,9 @@ Your token might not have `repo` scope. Check GitHub settings.
 - Restart the client
 - Run: `python tamrael_github_general.py --help`
 
+**"Received request before initialization was complete" (OpenCode):**
+This was a race condition in v2.0.1. Update to v2.1.1+. The fix defers HTTP calls to lazy init so the MCP handshake completes instantly.
+
 ---
 
 ## What You Just Set Up

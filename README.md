@@ -1,6 +1,6 @@
 # Tamrael's PPPS (Pretty, Pretty, Pretty, Secure) GitHub MCP Server
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.1-blue)
 ![Release Date](https://img.shields.io/badge/released-May%206%202026-green)
 ![Status](https://img.shields.io/badge/status-End%20of%20Life-red)
 
