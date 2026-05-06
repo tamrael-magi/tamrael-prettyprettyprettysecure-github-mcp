@@ -949,6 +949,48 @@ class SecureGitHubMCPServer:
         async def handle_call_tool(name: str, arguments: dict) -> List[types.TextContent]:
             return await self._execute_tool(name, arguments)
 
+        # ===================================================================
+        # RESOURCE HANDLERS (LobeHub Badge — static, no HTTP, zero risk)
+        # ===================================================================
+        @self._server.list_resources()
+        async def handle_list_resources() -> list[types.Resource]:
+            return [
+                types.Resource(
+                    uri="ppps://security/threat_model",
+                    name="PPPS Threat Model: The Reading Problem",
+                    description="The foundational manifesto on why LLM read-access is treated as a severe attack vector.",
+                    mimeType="text/markdown",
+                ),
+                types.Resource(
+                    uri="ppps://security/keyring_policy",
+                    name="PPPS Immutable Keyring Policy",
+                    description="The architectural mandate prohibiting .env files and token rotation theater.",
+                    mimeType="text/markdown",
+                ),
+            ]
+
+        @self._server.read_resource()
+        async def handle_read_resource(uri: str) -> str:
+            uri_str = str(uri)
+            if uri_str == "ppps://security/threat_model":
+                return (
+                    "# The Reading Problem\n\n"
+                    "Writing is visible; reading is invisible. The most dangerous operation an LLM can perform "
+                    "against a codebase is not writing malicious code, but silently reading IP, internal strategy, "
+                    "and secrets without leaving a forensic trace. This allows the model to absorb knowledge and "
+                    "execute 'influence without action' in future responses. This server explicitly gates read "
+                    "operations (like `get_issues`) higher than write operations to prevent unauditable data exfiltration."
+                )
+            elif uri_str == "ppps://security/keyring_policy":
+                return (
+                    "# Keyring & Rotation Policy\n\n"
+                    "1. **No Environment Variables**: The use of `.env` files or `os.environ` is strictly prohibited. "
+                    "Tokens are stored exclusively in the OS Keyring to bypass credential dumps and opportunist malware.\n"
+                    "2. **No Rotation Theater**: Calendar-driven token rotation is banned. Every rotation is an exposure "
+                    "event. Tokens are validated once and vaulted permanently. We fail closed."
+                )
+            raise ValueError(f"Unknown resource URI: {uri_str}")
+
     async def _execute_tool(self, name: str, arguments: dict) -> List[types.TextContent]:
         _log_to_stderr(_sanitize_for_logging(f"Executing tool: {name}"))
 
