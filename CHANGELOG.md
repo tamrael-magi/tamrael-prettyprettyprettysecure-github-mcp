@@ -66,6 +66,35 @@ ____
 
 ---
 
+## [2.2.0] - 2026-05-06 — LobeHub Listing Badges: Install Scripts + Resource Handlers
+
+### Overview
+
+Added two features to unlock LobeHub MCP Marketplace badges: one-liner install scripts and
+static MCP resource handlers. No changes to security architecture, async locks, or HTTP client.
+
+### Added
+
+- **`install.sh`** — Unix one-liner installer. Checks Python, downloads files, installs deps,
+  runs `secure_config.py setup`. LobeHub "Friendly Installation Methods" badge.
+- **`install.bat`** — Windows equivalent (PowerShell download + batch installer).
+- **MCP Resource Handlers** (`tamrael_github_general.py:952-993`) — Static `ppps://` URI
+  resources (`ppps://security/threat_model`, `ppps://security/keyring_policy`). No HTTP calls.
+  LobeHub "Includes Resources" badge.
+- **One-liner install instructions** in README.
+
+### Files Modified
+
+- `tamrael_github_general.py` — resource handlers (isolated, +42 lines)
+- `README.md` — one-liner install sections
+
+### Files Created
+
+- `install.sh`
+- `install.bat`
+
+---
+
 ## [2.1.1] - 2026-05-06 — MCP Race Condition Fix: Lazy Whitelist Init (tamrael_github_general v2.1.0)
 
 ### Overview
