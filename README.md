@@ -25,14 +25,14 @@ P.S. If you like this and decide to use my code in your project or product, plea
 ### What You Need
 - **Claude Desktop** (free tier works fine), **OpenCode** (terminal-first), or any MCP-compatible client
 - **VS Code** (or any text editor)
-- **Python 3.9+** 
+- **Python 3.10+** 
 - **GitHub Personal Access Token**
 - **That's literally it** - no expensive tools required
 
 *Built with basic tools and the Phoenix Wright soundtrack
 
 ### Prerequisites
-- Python 3.9+
+- Python 3.10+
 - GitHub Personal Access Token
 - Claude Desktop (or any MCP-compatible client)
 
@@ -345,7 +345,7 @@ python tamrael_github_general.py --security-level open
 
 ```bash
 pip install httpx mcp keyring
-# Make sure you have Python 3.9+
+# Make sure you have Python 3.10+
 ```
 
 **Claude Desktop configuration issues**
@@ -394,7 +394,7 @@ pytest --cov=security_validators --cov=secure_config --cov-report=term-missing
 
 Coverage is **90% on `security_validators.py`** (the security core). The uncovered lines in `secure_config.py` are the interactive CLI prompts (`setup` / `clear` / `test`), which require a live terminal by design. See [`tests/README.md`](tests/README.md) for the full breakdown.
 
-Tests run automatically on every push and pull request across Python 3.9–3.12 via GitHub Actions.
+Tests run automatically on every push and pull request across Python 3.10–3.12 via GitHub Actions.
 
 ## Planned Enhancements (Maybe, If I Feel Like It)
 
