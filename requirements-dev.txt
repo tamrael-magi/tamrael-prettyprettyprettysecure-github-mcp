@@ -1,0 +1,13 @@
+# Development / test dependencies for the PPPS GitHub MCP Server.
+# Install with:  pip install -r requirements-dev.txt
+
+# Runtime deps (needed to import the modules under test)
+httpx
+mcp
+keyring
+pydantic>=2
+pydantic-settings
+
+# Test tooling
+pytest>=8
+pytest-cov
