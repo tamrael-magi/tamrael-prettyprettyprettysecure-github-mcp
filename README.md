@@ -16,6 +16,8 @@ Built for and by a dev noob (me) who was using Notepad a month ago, but brings c
 **Pretty, Pretty, Pretty Secure because everyone else calls their stuff "military-grade" and "enterprise-ready" like they're selling special-ops tactical toilet paper.**
 
 > ⛔ **END OF LIFE** — This project is being retired in favor of a Rust-based GitLab MCP server. No further development planned. Last review by DeepSeek V4 Flash (2026-05-06).
+>
+> *Final code & test review signed off by Perplexity Computer — 129-test suite + CI, green across Python 3.10–3.12. 5/30/2026.*
 
 P.S. If you like this and decide to use my code in your project or product, please properly give credit and link back to my GitHub or repo. Thanks!
 
