@@ -1,6 +1,8 @@
 # Tamrael's PPPS (Pretty, Pretty, Pretty, Secure) GitHub MCP Server
 
 [![MCP Badge](https://lobehub.com/badge/mcp/tamrael-magi-ppps-github-mcp)](https://lobehub.com/mcp/tamrael-magi-ppps-github-mcp)
+[![tests](https://github.com/tamrael-magi/tamrael-prettyprettyprettysecure-github-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/tamrael-magi/tamrael-prettyprettyprettysecure-github-mcp/actions/workflows/tests.yml)
+![Tests](https://img.shields.io/badge/tests-129%20passing-brightgreen)
 ![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![Release Date](https://img.shields.io/badge/released-May%206%202026-green)
 ![Status](https://img.shields.io/badge/status-End%20of%20Life-red)
@@ -373,6 +375,27 @@ Optional CCTV audit logging provides forensic-grade operation tracking:
 
 _Audit logging is optional and has zero performance impact when disabled._
 
+## Testing
+
+PPPS ships with a **security-focused test suite — 129 tests, all passing** — that locks down the attack surface this server is built to defend: path traversal, branch-name command injection, timing-safe whitelist membership, token redaction in logs, fail-closed token loading, and security-level operation gating.
+
+The tests mock the OS keyring and the GitHub API, so they run anywhere — no real token, no network, no keyring backend required.
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+With coverage:
+
+```bash
+pytest --cov=security_validators --cov=secure_config --cov-report=term-missing
+```
+
+Coverage is **90% on `security_validators.py`** (the security core). The uncovered lines in `secure_config.py` are the interactive CLI prompts (`setup` / `clear` / `test`), which require a live terminal by design. See [`tests/README.md`](tests/README.md) for the full breakdown.
+
+Tests run automatically on every push and pull request across Python 3.9–3.12 via GitHub Actions.
+
 ## Planned Enhancements (Maybe, If I Feel Like It)
 
 _Based on code review feedback from three expert LLM personas and my growing security TODO list. These won't be implemented — see EOL notice above._
@@ -415,7 +438,7 @@ _Based on code review feedback from three expert LLM personas and my growing sec
 ### Code Quality & Testing
 
 - **Comprehensive Type Hints** - Full type safety across the codebase
-- **Unit Test Suite** - Testing for critical security and functionality paths
+- **Unit Test Suite** - ✅ Shipped: 129 tests covering the security-critical paths (see [Testing](#testing) below)
 - **Integration Tests** - End-to-end testing with real GitHub API
 - **Security Test Suite** - Automated vulnerability scanning
 
