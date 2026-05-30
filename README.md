@@ -9,6 +9,11 @@
 
 **Authors:** Kevin Francisco (Tamrael) with Claude Sonnet 4 & DeepSeek V4 Flash (LLM Collaborators)  
 
+
+<a href="https://gitroll.io/profile/ueAQZszI4kMOWPF3kDBInsJJfK4K3" target="_blank"><img src="https://gitroll.io/api/badges/profiles/v1/ueAQZszI4kMOWPF3kDBInsJJfK4K3?theme=light" alt="GitRoll Profile Badge"/></a>
+
+
+
 Stop giving LLMs god-mode access to your repositories. PPPS is the zero-trust GitHub integration that treats AI agents as hostile by default — putting the OPSEC back in the hands of the person who actually pays the bills. Your token lives in the OS keyring, invisible to both the AI and your codebase. Smart whitelisting sandboxes access to specific repos so a hallucination doesn't turn into a lateral movement event across your entire org. Fail-closed by design: if it can't authenticate safely, it refuses to run. Tamper-proof audit log keeps receipts. Automation without the 3 AM "did I just leak everything" panic.
 
 Built for and by a dev noob (me) who was using Notepad a month ago, but brings crypto-trader paranoia, Inventor intellectual property protection / patent law knowledge, methodological academic research documentation standards, and OCD systems level thinking to AI security. I just wanted to safeguard my stuff, okay?
